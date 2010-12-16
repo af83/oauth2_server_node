@@ -22,13 +22,11 @@ var URL = require('url')
   , tools = require('nodetk/server_tools')
   
   , oauth2 = require('./common')
-  //, authentication = require('../authentication')
-  //, RFactory = require('../model').RFactory
   ;
 
 
 var SERVER = exports;
-// To be set: SERVER.RFactory, SERVER.authentication
+// To be set by connect middleware: SERVER.RFactory, SERVER.authentication
 
 SERVER.oauth_error = function(res, type, id) {
   /* Render a particula error.
@@ -288,7 +286,7 @@ SERVER.authorize_endpoint = function(req, res) {
 };
 
 
-exports.connector = function(config) {
+exports.connector = function(config, RFactory, authentication) {
   /* Returns Oauth2 server connect middleware.
    *
    * This middleware will intercept requests aiming at OAuth2 server
@@ -303,8 +301,17 @@ exports.connector = function(config) {
    *    - token_url: OAuth2 token endpoint,
    *      the URL the client will use to check the authorization_code given by
    *      user and get a token.
+   *  - RFactory: RFactory object initialized whith minimal schema info
+   *    (Grant and Client objects). cf. README file for more info.
+   *  - authentication: module (or object) defining the following functions:
+   *    * login: function to render the login page to end user in browser.
+   *    * process_login: to process the credentials given by user. 
+   *      This function should use the send_grant function once user is
+   *      authenticated.
    *
    */
+  SERVER.RFactory = RFactory;
+  SERVER.authentication = authentication;
   var routes = {GET: {}, POST: {}};
   routes.GET[config.authorize_url] = 
     routes.POST[config.authorize_url] = SERVER.authorize_endpoint;
