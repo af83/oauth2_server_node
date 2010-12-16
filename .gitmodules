@@ -1,0 +1,3 @@
+[submodule "vendors/nodetk"]
+	path = vendors/nodetk
+	url = git://github.com/AF83/nodetk.git
