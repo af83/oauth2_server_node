@@ -19,7 +19,31 @@ oauth2_server_node is developed together with:
 
 ## Usage
 
-TBD
+OAuth2_server_node is a library providing OAuth2 related methods and tools, no more. As such, you will have to set-up a certain amount of initializations / declarations to use it. A good example on how to use it is the [auth_server](https://github.com/AF83/auth_server) project.
+
+To create an OAuth2 server using oauth2_server_node, you need to get a connector using the oauth2/server.connector function. This function needs three parameters:
+
+ - a config obj, containing:
+  - authorize_url: end-user authorization endpoint, the URL the end-user must be redirected to to be served the authentication form.
+  - process_login_url: the url the authentication form will POST to.
+  - token_url: OAuth2 token endpoint, the URL the client will use to check the authorization_code given by user and get a token. 
+ - a RFactory obj as defined by [rest-mongo](https://github.com/AF83/rest-mongo) (a JS ORM using Mongodb - or others means - as a backend). It is used to get an R object, providing classes and methods to easily access the DB. This factory needs to be initialized with a schema containing at least the following resources:
+   - Grant, corresponding the grant issued to an OAuth2 client through the end-user, and containing the following properties:
+     - client_id: the client id associated with the grant
+     - user_id: the user id associated with the grant
+     - code: the grant code (the code sent to client is: grant.id|grant.code)
+     - time: when the grant was issued, POSIX time
+   - Client, corresponding to an OAuth2 client, and containing the following properties:
+     - id: the OAuth2 client id
+     - name: the OAuth2 client name
+     - secret: the secret shared with the OAuth2 client
+     - redirect_uri: the redirecting url associated with the client
+ - an authentication object, providing the following functions:
+  - login: function to render the login page to end user in browser.
+  - process_login: to process the credentials given by user. This function should use the oauth2/server.send_grant function once user is authenticated.
+
+
+The returned middleware will take care of requests addressed to the OAuth2 server, using the objects/functions it was given during initialization. You may want to create a resource server then. The oauth2/common.js provides a check_token function which might be helpful in that. This function will check the token in request parameter and give you associated info, or deny access to client (in case of bad token).
 
 
 ## Dependencies
@@ -32,7 +56,7 @@ oauth2_server_node uses [nodetk](https://github.com/AF83/nodetk) and [rest-mongo
 
 ## Projects using oauth2_server_node
 
-A [wiki page](https://github.com/AF83/oauth2/wiki) lists the projects using oauth2_server_node. Don't hesitate to edit it.
+A [wiki page](https://github.com/AF83/oauth2_server_node/wiki) lists the projects using oauth2_server_node. Don't hesitate to edit it.
 
 
 ## License
