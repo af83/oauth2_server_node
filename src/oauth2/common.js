@@ -79,7 +79,7 @@ exports.create_access_token = function(user_id, client_id, additional_info) {
 };
 
 
-exports.token_info = function(token) {
+var token_info = exports.token_info = function(token) {
   /* Returns the information associated with a token, or null if token is bad.
    */
   var data = serializer.load_str(token);
@@ -123,8 +123,10 @@ exports.check_token = function(req, res, callback) {
       oauth_token = match[1];
     }
   }
-  var info = token_info(oauth_token);
-  if(!info) {
+  var info;
+  try {
+    info = token_info(oauth_token);
+  } catch(err) {
     res.writeHead(400, {'Content-Type': 'text/html'});
     res.end('Invalid oauth_token.');
     return;
