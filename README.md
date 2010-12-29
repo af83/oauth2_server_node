@@ -27,6 +27,8 @@ To create an OAuth2 server using oauth2_server_node, you need to get a connector
   - authorize_url: end-user authorization endpoint, the URL the end-user must be redirected to to be served the authentication form.
   - process_login_url: the url the authentication form will POST to.
   - token_url: OAuth2 token endpoint, the URL the client will use to check the authorization_code given by user and get a token. 
+  - crypt_key: string, encryption key used to crypt information contained in the issued tokens. This is a symmetric key and must be kept secret.
+  - sign_key: string, signature key used to sign (HMAC) issued tokens. This is a symmetric key and must be kept secret.
  - a RFactory obj as defined by [rest-mongo](https://github.com/AF83/rest-mongo) (a JS ORM using Mongodb - or others means - as a backend). It is used to get an R object, providing classes and methods to easily access the DB. This factory needs to be initialized with a schema containing at least the following resources:
    - Grant, corresponding the grant issued to an OAuth2 client through the end-user, and containing the following properties:
      - client_id: the client id associated with the grant
