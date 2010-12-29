@@ -19,7 +19,7 @@ var URL = require('url')
   , querystring = require('querystring')
   
   , randomString = require('nodetk/random_str').randomString
-  , serializer = require('nodetk/serializer')
+  , SecureSerializer = require('nodetk/serializer').SecureSerializer
   , tools = require('nodetk/server_tools')
   
   , oauth2 = require('./common')
@@ -297,6 +297,10 @@ exports.connector = function(config, RFactory, authentication) {
    *    - token_url: OAuth2 token endpoint,
    *      the URL the client will use to check the authorization_code given by
    *      user and get a token.
+   *    - crypt_key: string, encryption key used to crypt information contained
+   *      in the issued tokens. This is a symmetric key and must be kept secret.
+   *    - sign_key: string, signature key used to sign issued tokens.
+   *      This is a symmetric key and must be kept secret.
    *  - RFactory: RFactory object initialized whith minimal schema info
    *    (Grant and Client objects). cf. README file for more info.
    *  - authentication: module (or object) defining the following functions:
@@ -306,6 +310,8 @@ exports.connector = function(config, RFactory, authentication) {
    *      authenticated.
    *
    */
+  var sserializer = new SecureSerializer(config.crypt_key, config.sign_key);
+  oauth2.set_serializer(sserializer);
   SERVER.RFactory = RFactory;
   SERVER.authentication = authentication;
   var routes = {GET: {}, POST: {}};

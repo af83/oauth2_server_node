@@ -1,6 +1,13 @@
 var assert = require('nodetk/testing/custom_assert')
   , oauth2 = require('../../../oauth2/common')
+  , serializer = require('nodetk/serializer')
   ;
+
+oauth2.set_serializer(serializer);
+exports.module_close = function(callback) {
+  oauth2.set_serializer({});
+  callback();
+};
 
 
 exports.tests = [

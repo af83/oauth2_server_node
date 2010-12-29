@@ -2,13 +2,16 @@ var assert = require('nodetk/testing/custom_assert')
   , server = require('../../../oauth2/server')
   , oauth2 = require('../../../oauth2/common')
   , tools = require('nodetk/testing/tools')
+  , serializer = require('nodetk/serializer')
   ;
 
 
 // At the end of the tests, reset faked/mocked stuff:
 var original_Date = Date;
+oauth2.set_serializer(serializer);
 exports.module_close = function(callback) {
   Date = original_Date;
+  oauth2.set_serializer({});
   callback();
 };
 
