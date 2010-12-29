@@ -2,6 +2,7 @@
  * Common OAuth2 stuff.
  *
  */
+var serializer = require('nodetk/serializer');
 
 
 var ERRORS = exports.ERRORS = {
@@ -64,22 +65,28 @@ var ERRORS = exports.ERRORS = {
 var URL = require('url');
 
 
-var token_info = exports.token_info = function(token) {
+exports.create_access_token = function(user_id, client_id, additional_info) {
+  /* Returns access token corresponding to given params
+   */
+  // TODO: generate a token with encryption/signature
+  // so that it cannot be forged.
+  return serializer.dump_str([user_id, client_id, additional_info || 0]);
+};
+
+
+exports.token_info = function(token) {
   /* Returns the information associated with a token, or null if token is bad.
    */
   // TODO: encrypt the token somehow to check it is valid...
   // + limit its scope and lifetime.
-  try {
-    var token_parts = token.split(',');
-    var info = {
-      user_id: token_parts[0],
-      client_id: token_parts[1],
-    };
-    if(!info.user_id || !info.client_id) return null;
-    return info;
-  } catch(e) {
-    return null;
-  }
+  var data = serializer.load_str(token);
+  if(!data || data.length != 3) return null;
+  var info = {
+    user_id: data[0],
+    client_id: data[1],
+  };
+  if(data[2]) info.additional_info = data[2];
+  return info;
 };
 
 

@@ -1,5 +1,6 @@
 var assert = require('nodetk/testing/custom_assert')
   , server = require('../../../oauth2/server')
+  , oauth2 = require('../../../oauth2/common')
   , tools = require('nodetk/testing/tools')
   ;
 
@@ -85,7 +86,7 @@ exports.tests = [
   }}};
   server.valid_grant(R, data, function(token) {
     assert.deepEqual(token, {
-      access_token: server.create_access_token('uid', 'cid')
+      access_token: oauth2.create_access_token('uid', 'cid')
     });
   }, function() {
     assert.ok(false, 'should not be called');  

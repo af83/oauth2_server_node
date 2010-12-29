@@ -33,6 +33,7 @@ To create an OAuth2 server using oauth2_server_node, you need to get a connector
      - user_id: the user id associated with the grant
      - code: the grant code (the code sent to client is: grant.id|grant.code)
      - time: when the grant was issued, POSIX time
+     - additional_info: JSON object containing arbitrary data
    - Client, corresponding to an OAuth2 client, and containing the following properties:
      - id: the OAuth2 client id
      - name: the OAuth2 client name

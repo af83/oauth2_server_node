@@ -19,6 +19,7 @@ var URL = require('url')
   , querystring = require('querystring')
   
   , randomString = require('nodetk/random_str').randomString
+  , serializer = require('nodetk/serializer')
   , tools = require('nodetk/server_tools')
   
   , oauth2 = require('./common')
@@ -71,16 +72,7 @@ var PARAMS = exports.PARAMS = {
 PARAMS.eua.all = PARAMS.eua.mandatory.concat(PARAMS.eua.optional);
 
 
-var create_access_token = exports.create_access_token = function(user_id, client_id) {
-  /* Returns access token corresponding to given params
-   */
-  // TODO: generate a token with assymetric encryption/signature
-  // so that it cannot be forged.
-  return user_id + ',' + client_id;
-};
-
-
-exports.send_grant = function(res, R, user_id, client_data) {
+exports.send_grant = function(res, R, user_id, client_data, additional_info) {
   /* Create a grant and send it to the user.
    * The code sent is of the form 'grand.id|grant.code'.
    *
@@ -93,6 +85,8 @@ exports.send_grant = function(res, R, user_id, client_data) {
    *      - client_id
    *      - redirect_uri
    *      - state: str, optional, if given, will be sent with the grant.
+   *  - additional_info: optional hash, anything you want to be stored with
+   *    the grant.
    *
    */
   var grant = new R.Grant({
@@ -101,6 +95,7 @@ exports.send_grant = function(res, R, user_id, client_data) {
     user_id: user_id,
     code: randomString(128),
   });
+  if(additional_info) grant.additional_info = additional_info;
   grant.save(function() {
     var qs = {code: grant.id + '|' + grant.code};
     if(client_data.state) qs.state = client_data.state;
@@ -138,11 +133,13 @@ SERVER.valid_grant = function(R, data, callback, fallback) {
     if(!grant || grant.time < minute_ago || 
        grant.client_id != data.client_id || 
        grant.code != id_code[1]) return callback(null);
+    var additional_info = grant.additional_info;
     // Delete the grant so that it cannot be used anymore:
     grant.delete_(function() {
       // Generate and send an access_token to the client:
       var token = {
-        access_token: create_access_token(grant.user_id, grant.client_id)
+        access_token: oauth2.create_access_token(grant.user_id, grant.client_id,
+                                                 additional_info)
         // optional: expires_in, refresh_token, scope
       };
       callback(token);
@@ -297,7 +294,6 @@ exports.connector = function(config, RFactory, authentication) {
    *    - authorize_url: end-user authorization endpoint,
    *      the URL the end-user must be redirected to to be served the 
    *      authentication form.
-   *    - process_login_url: the url the authentication form will POST to.
    *    - token_url: OAuth2 token endpoint,
    *      the URL the client will use to check the authorization_code given by
    *      user and get a token.
