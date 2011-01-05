@@ -74,7 +74,7 @@ PARAMS.eua.all = PARAMS.eua.mandatory.concat(PARAMS.eua.optional);
 
 exports.send_grant = function(res, R, user_id, client_data, additional_info) {
   /* Create a grant and send it to the user.
-   * The code sent is of the form 'grand.id|grant.code'.
+   * The code sent is of the form: grand.id + '.' + grant.code
    *
    * Arguments:
    *  - req
@@ -97,7 +97,7 @@ exports.send_grant = function(res, R, user_id, client_data, additional_info) {
   });
   if(additional_info) grant.additional_info = additional_info;
   grant.save(function() {
-    var qs = {code: grant.id + '|' + grant.code};
+    var qs = {code: grant.id + '.' + grant.code};
     if(client_data.state) qs.state = client_data.state;
     qs = querystring.stringify(qs);
     tools.redirect(res, client_data.redirect_uri + '?' + qs);
@@ -126,7 +126,7 @@ SERVER.valid_grant = function(R, data, callback, fallback) {
    *    an error).
    *
    */
-  var id_code = data.code.split('|');
+  var id_code = data.code.split('.');
   if(id_code.length != 2) return callback(null);
   R.Grant.get({ids: id_code[0]}, function(grant) {
     var minute_ago = Date.now() - 60000;

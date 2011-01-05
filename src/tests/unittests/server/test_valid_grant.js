@@ -31,7 +31,7 @@ exports.tests = [
     fallback("error");
     assert.ok(true, 'must be called');
   }}};
-  server.valid_grant(R, {code: 'id|code'}, function(token) {
+  server.valid_grant(R, {code: 'id.code'}, function(token) {
     assert.ok(false, 'should not be called');
   }, function() {
     assert.ok(true, 'must be called');
@@ -40,7 +40,7 @@ exports.tests = [
 
 ['No grant | bad code | bad client_id | grant expired', 8, function() {
   Date.now = function(){return 60000}; // 0 + 1 minute
-  var data = {code: 'id|CODE', client_id: 'cid'};
+  var data = {code: 'id.CODE', client_id: 'cid'};
   [ null // no grant
   , {client_id: 'cid', code: 'WRONG', time: 50000} // bad code
   , {client_id: 'wrong', code: 'CODE', time: 50000} // bad client_id
@@ -60,7 +60,7 @@ exports.tests = [
 
 ['Error deleting grant from DB', 3, function() { 
   Date.now = function(){return 60000}; // 0 + 1 minute
-  var data = {code: 'id|CODE', client_id: 'cid'};
+  var data = {code: 'id.CODE', client_id: 'cid'};
   var R = {Grant: {get: function(query, callback, fallback) {
     callback({client_id: 'cid', code: 'CODE', time: 50000, 
       delete_: function(callback, fallback) {
@@ -78,7 +78,7 @@ exports.tests = [
 
 ['OK', 3, function() { 
   Date.now = function(){return 60000}; // 0 + 1 minute
-  var data = {code: 'id|CODE', client_id: 'cid'};
+  var data = {code: 'id.CODE', client_id: 'cid'};
   var R = {Grant: {get: function(query, callback, fallback) {
     callback({client_id: 'cid', code: 'CODE', time: 50000, user_id: 'uid',
       delete_: function(callback, fallback) {

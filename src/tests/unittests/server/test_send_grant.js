@@ -18,7 +18,7 @@ var test_send_grant_ok = function(state) {
   R.Grant.prototype = {
     save: function(callback){callback()}
   };
-  var qs = {code: "grant_id|grant_code"};
+  var qs = {code: "grant_id.grant_code"};
   if(state) qs.state = state;
   var loc = 'http://client/process?' + querystring.stringify(qs);
   var res = tools.get_expected_redirect_res(loc);
