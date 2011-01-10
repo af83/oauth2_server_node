@@ -10,13 +10,31 @@ var assert = require('nodetk/testing/custom_assert')
 original_RFactory = server.RFactory;
 original_authentication = server.authentication;
 original_oauth_error = server.oauth_error;
-exports.module_close = function(callback) {
+var reinit = function(callback) {
   server.RFactory = original_RFactory;
   server.authentication = original_authentication;
   server.oauth_error = original_oauth_error;
   callback();
 };
 
+exports.module_close = reinit;
+exports.setup = reinit;
+
+function assert_authorize_ok(params) {
+  // make 3 assertions
+  var res = "res obj", req = {};
+  server.authentication = {login: function(req_, res_, data) {
+    assert.equal(res, res_);
+    assert.equal(req, req_);
+    assert.deepEqual(data, {
+      client_id: 'cid'
+    , client_name: 'cname'
+    , redirect_uri: 'some_uri'
+    , state: 'somestate'
+    });
+  }};
+  server.authorize(params, req, res);
+}
 
 exports.tests = [
 
@@ -87,27 +105,36 @@ exports.tests = [
   server.authorize(params, req, res);
 }],
 
-['OK', 3, function() {
+['Client without redirect_uri but with redirect_uri param: OK', 3, function() {
+  server.RFactory = function() {return {
+    Client: {get: function(query, callback) {
+      callback({id: 'cid', name: 'cname', redirect_uri: ''});
+    }}
+  }};
+  var params = {client_id: 'cid', response_type: 'code', redirect_uri: 'some_uri', state: 'somestate'};
+  assert_authorize_ok(params);
+}],
+
+['Client with redirect_uri but without redirect_uri param: OK', 3, function() {
   server.RFactory = function() {return {
     Client: {get: function(query, callback) {
       callback({redirect_uri: 'some_uri', name: 'cname', id: 'cid'});
     }}
   }};
-  var params = {client_id: 'cid', response_type: 'code', 
-                redirect_uri: 'some_uri', state: 'somestate'};
-  var res = "res obj", req = {};
-  server.authentication = {login: function(req_, res_, data) {
-    assert.equal(res, res_);
-    assert.equal(req, req_);
-    assert.deepEqual(data, {
-      client_id: 'cid'
-    , client_name: 'cname'
-    , redirect_uri: 'some_uri'
-    , state: 'somestate'
-    });
+  var params = {client_id: 'cid', response_type: 'code',
+                state: 'somestate'};
+  assert_authorize_ok(params);
+}],
+
+['Client with redirect_uri and redirect_uri param: OK', 3, function() {
+  server.RFactory = function() {return {
+    Client: {get: function(query, callback) {
+      callback({redirect_uri: 'some_uri', name: 'cname', id: 'cid'});
+    }}
   }};
-  server.authorize(params, req, res);
+  var params = {client_id: 'cid', response_type: 'code',
+                redirect_uri: 'some_uri', state: 'somestate'};
+  assert_authorize_ok(params);
 }],
 
 ];
-

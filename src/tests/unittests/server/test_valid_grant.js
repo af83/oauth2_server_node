@@ -38,13 +38,14 @@ exports.tests = [
   });
 }],
 
-['No grant | bad code | bad client_id | grant expired', 8, function() {
+['No grant | bad code | bad client_id | grant expired | invalid redirect_uri', 10, function() {
   Date.now = function(){return 60000}; // 0 + 1 minute
-  var data = {code: 'id.CODE', client_id: 'cid'};
+  var data = {code: 'id.CODE', client_id: 'cid', redirect_uri: "redirect_uri"};
   [ null // no grant
-  , {client_id: 'cid', code: 'WRONG', time: 50000} // bad code
-  , {client_id: 'wrong', code: 'CODE', time: 50000} // bad client_id
-  , {client_id: 'cid', code: 'CODE', time: -1} // grant expired
+  , {client_id: 'cid', code: 'WRONG', time: 50000, redirect_uri: "redirect_uri"} // bad code
+  , {client_id: 'wrong', code: 'CODE', time: 50000, redirect_uri: "redirect_uri"} // bad client_id
+  , {client_id: 'cid', code: 'CODE', time: -1, redirect_uri: "redirect_uri"} // grant expired
+  , {client_id: 'cid', code: 'CODE', time: 50000, redirect_uri: "bad_redirect_uri"}
   ].forEach(function(retrieved_token) {
     var R = {Grant: {get: function(query, callback, fallback) {
       callback(retrieved_token);

@@ -1,8 +1,8 @@
-/* 
+/*
  * This implements a OAuth2 server methods, as specified at:
  *  http://tools.ietf.org/html/draft-ietf-oauth-v2-10
  *
- * Only features the "web server" schema: 
+ * Only features the "web server" schema:
  *  http://tools.ietf.org/html/draft-ietf-oauth-v2-10#section-1.4.1
  *
  * Terminology:
@@ -17,11 +17,11 @@
 
 var URL = require('url')
   , querystring = require('querystring')
-  
+
   , randomString = require('nodetk/random_str').randomString
   , SecureSerializer = require('nodetk/serializer').SecureSerializer
   , tools = require('nodetk/server_tools')
-  
+
   , oauth2 = require('./common')
   ;
 
@@ -57,8 +57,8 @@ var unknown_error = exports.unknown_error = function(res, err) {
 // Parameters we must/can have in different kinds of requests:
 var PARAMS = exports.PARAMS = {
   eua: { // eua = end user authorization
-    mandatory: ['client_id', 'response_type', 'redirect_uri'],
-    optional: ['state', 'scope'],
+    mandatory: ['client_id', 'response_type'],
+    optional: ['state', 'scope', 'redirect_uri'],
     // possible values for response_type param:
     response_types: {'token': 1, 'code': 1, 'code_and_token': 1},
   },
@@ -94,6 +94,7 @@ exports.send_grant = function(res, R, user_id, client_data, additional_info) {
     time: Date.now(),
     user_id: user_id,
     code: randomString(128),
+    redirect_uri: client_data.redirect_uri
   });
   if(additional_info) grant.additional_info = additional_info;
   grant.save(function() {
@@ -120,9 +121,10 @@ SERVER.valid_grant = function(R, data, callback, fallback) {
    *  - data:
    *   - code: grant code given by client.
    *   - client_id: the client id giving the grant
-   *  - callback: to be called with a token if the grant was valid, 
+   *   - redirect_uri: the redirect_uri given with the grant
+   *  - callback: to be called with a token if the grant was valid,
    *    or null otherwise.
-   *  - fallback: to be called in case of error (an invalid grant is not 
+   *  - fallback: to be called in case of error (an invalid grant is not
    *    an error).
    *
    */
@@ -130,9 +132,11 @@ SERVER.valid_grant = function(R, data, callback, fallback) {
   if(id_code.length != 2) return callback(null);
   R.Grant.get({ids: id_code[0]}, function(grant) {
     var minute_ago = Date.now() - 60000;
-    if(!grant || grant.time < minute_ago || 
-       grant.client_id != data.client_id || 
-       grant.code != id_code[1]) return callback(null);
+    if(!grant || grant.time < minute_ago ||
+       grant.client_id != data.client_id ||
+       grant.code != id_code[1] ||
+       grant.redirect_uri != data.redirect_uri
+       ) return callback(null);
     var additional_info = grant.additional_info;
     // Delete the grant so that it cannot be used anymore:
     grant.delete_(function() {
@@ -179,7 +183,7 @@ var token_endpoint = exports.token_endpoint = function(req, res) {
     // either by HTTP basic auth, or by client_secret parameter:
     var secret = req.headers['authorization'];
     if(secret) {
-      if(params.client_secret) 
+      if(params.client_secret)
         return SERVER.oauth_error(res, 'oat', 'invalid_request');
       params.client_secret = secret.slice(6); // remove the leading 'Basic'
     }
@@ -189,17 +193,10 @@ var token_endpoint = exports.token_endpoint = function(req, res) {
 
     // Check the client_id exists and does have correct client_secret:
     R.Client.get({ids: params.client_id}, function(client) {
-      if(!client || client.secret != params.client_secret) 
+      if(!client || client.secret != params.client_secret)
         return SERVER.oauth_error(res, 'oat', 'invalid_client');
 
-      // Check the redirect_uri:
-      // XXX: in cases we decide the redirect_uri is not binded to the client,
-      // but can vary, this should be associated with the grant (and store
-      // in issued_codes).
-      if(client.redirect_uri != params.redirect_uri)
-        return SERVER.oauth_error(res, 'oat', 'invalid_grant');
-
-      var data = {code: params.code, client_id: client.id};
+      var data = {code: params.code, client_id: client.id, redirect_uri: params.redirect_uri};
       SERVER.valid_grant(R, data, function(token) {
         if(!token) return SERVER.oauth_error(res, 'oat', 'invalid_grant');
         res.writeHead(200, { 'Content-Type': 'application/json'
@@ -219,7 +216,7 @@ SERVER.authorize = function(params, req, res) {
    *  This function should only be called by oauth2.authorize
    *
    * Arguments:
-   *  - params: 
+   *  - params:
    *  - req
    *  - res
    *
@@ -230,7 +227,7 @@ SERVER.authorize = function(params, req, res) {
     if(!params[param]) error = true;
   });
   if(error) return SERVER.oauth_error(res, 'eua', 'invalid_request');
-  if(!PARAMS.eua.response_types[params.response_type]) 
+  if(!PARAMS.eua.response_types[params.response_type])
     return SERVER.oauth_error(res, 'eua', 'unsupported_response_type');
 
   // XXX: For now, we only support 'code' response type
@@ -246,14 +243,17 @@ SERVER.authorize = function(params, req, res) {
   var R = SERVER.RFactory();
   R.Client.get({ids: params.client_id}, function(client) {
     if(!client) return SERVER.oauth_error(res, 'eua', 'invalid_client');
-    // Check the redirect_uri is the one we know about:
-    if(client.redirect_uri != params.redirect_uri) 
+    // Check the redirect_uri is the one we know about (if we do):
+    if(client.redirect_uri && params.redirect_uri
+       && client.redirect_uri != params.redirect_uri) {
       return SERVER.oauth_error(res, 'eua', 'redirect_uri_mismatch');
+    }
+    var redirect_uri = client.redirect_uri || params.redirect_uri;
     // Eveything is allright, ask the user to sign in.
     SERVER.authentication.login(req, res, {
       client_id: client.id,
       client_name: client.name,
-      redirect_uri: params.redirect_uri,
+      redirect_uri: redirect_uri,
       state: params.state
     });
   }, function(err) { unknown_error(res, err) });
@@ -292,7 +292,7 @@ exports.connector = function(config, RFactory, authentication) {
    * Arguments:
    *  - config, hash containing:
    *    - authorize_url: end-user authorization endpoint,
-   *      the URL the end-user must be redirected to to be served the 
+   *      the URL the end-user must be redirected to to be served the
    *      authentication form.
    *    - token_url: OAuth2 token endpoint,
    *      the URL the client will use to check the authorization_code given by
@@ -305,7 +305,7 @@ exports.connector = function(config, RFactory, authentication) {
    *    (Grant and Client objects). cf. README file for more info.
    *  - authentication: module (or object) defining the following functions:
    *    * login: function to render the login page to end user in browser.
-   *    * process_login: to process the credentials given by user. 
+   *    * process_login: to process the credentials given by user.
    *      This function should use the send_grant function once user is
    *      authenticated.
    *
@@ -315,7 +315,7 @@ exports.connector = function(config, RFactory, authentication) {
   SERVER.RFactory = RFactory;
   SERVER.authentication = authentication;
   var routes = {GET: {}, POST: {}};
-  routes.GET[config.authorize_url] = 
+  routes.GET[config.authorize_url] =
     routes.POST[config.authorize_url] = SERVER.authorize_endpoint;
   routes.POST[config.process_login_url] = authentication.process_login;
   routes.POST[config.token_url] = token_endpoint;

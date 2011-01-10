@@ -136,24 +136,6 @@ exports.tests = [
   server.token_endpoint(req, res);
 }],
 
-['Mismatching redirect_uri', 3, function() {
-  server.RFactory = function(){return {Client: {get: function(query, callback) {
-    callback({secret: 'somesecret', redirect_uri: 'http://client/process'});
-  }}}};
-  var res = 'resobj';
-  var params = {
-    client_id: 'cid', code: 1, redirect_uri: 'http://badclient',
-    grant_type: 'authorization_code',
-    client_secret: 'somesecret'
-  };
-  var req = {
-    headers: {}
-  , form: {complete: function(callback){callback(null, params)}}
-  };
-  expect_oauth_error(res, 'oat', 'invalid_grant');
-  server.token_endpoint(req, res);
-}],
-
 ['Invalid grant', 3, function() {
   server.RFactory = function(){return {Client: {get: function(query, callback) {
     callback({secret: 'somesecret', redirect_uri: 'http://client/process'});
