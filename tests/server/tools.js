@@ -1,5 +1,5 @@
 var assert = require('nodetk/testing/custom_assert')
-  , server = require('../../../oauth2/server')
+  , server = require('../../lib/server')
   ;
 
 

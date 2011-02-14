@@ -1,5 +1,5 @@
 var assert = require('nodetk/testing/custom_assert')
-  , server = require('../../../oauth2/server')
+  , server = require('../../lib/server')
   , tools = require('nodetk/testing/tools')
   , querystring = require('querystring')
   , expect_oauth_error = require('./tools').expect_oauth_error

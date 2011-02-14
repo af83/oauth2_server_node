@@ -1,5 +1,5 @@
 var assert = require('nodetk/testing/custom_assert')
-  , oauth2 = require('../../../oauth2/common')
+  , oauth2 = require('../../lib/common')
   , serializer = require('nodetk/serializer')
   ;
 
