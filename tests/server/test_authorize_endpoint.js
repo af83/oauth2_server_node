@@ -19,7 +19,7 @@ exports.tests = [
 
 ['Params given (GET)', 3, function() {
   var qs = querystring.stringify({someparam: "someval"});
-  var req = {url: 'http://server/auth?' + qs};
+  var req = {method: 'GET', url: 'http://server/auth?' + qs};
   var res = 'res obj';
   server.authorize = function(params, req_, res_) {
     assert.equal(req_, req);
@@ -30,7 +30,7 @@ exports.tests = [
 }],
 
 ['Params given (POST)', 4, function() {
-  var req = {url: 'http://server/auth'};
+  var req = {method: 'POST', url: 'http://server/auth'};
   req.form = {complete: function(callback) {
     assert.ok(true, 'must be called');
     callback(null, {someparam: "someval"});
