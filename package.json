@@ -1,7 +1,6 @@
 { "name" : "oauth2-server"
 , "description" : "Node library providing the bases to implement an OAuth2 server (as connect middleware)."
-, "version": "0.0.1pre"
-, "main": "./lib/server.js"
+, "version": "0.0.1pre2"
 , "repository" :
   { "type" : "git"
   , "url" : "https://github.com/AF83/oauth2_server_node.git"
