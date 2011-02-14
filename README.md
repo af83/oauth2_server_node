@@ -26,7 +26,7 @@ To create an OAuth2 server using oauth2_server_node, you need to get a connector
  - a config obj, containing:
   - authorize_url: end-user authorization endpoint, the URL the end-user must be redirected to to be served the authentication form.
   - process_login_url: the url the authentication form will POST to.
-  - token_url: OAuth2 token endpoint, the URL the client will use to check the authorization_code given by user and get a token. 
+  - token_url: OAuth2 token endpoint, the URL the client will use to check the authorization_code given by user and get a token.
   - crypt_key: string, encryption key used to crypt information contained in the issued tokens. This is a symmetric key and must be kept secret.
   - sign_key: string, signature key used to sign (HMAC) issued tokens. This is a symmetric key and must be kept secret.
  - a RFactory obj as defined by [rest-mongo](https://github.com/AF83/rest-mongo) (a JS ORM using Mongodb - or others means - as a backend). It is used to get an R object, providing classes and methods to easily access the DB. This factory needs to be initialized with a schema containing at least the following resources:
@@ -53,10 +53,6 @@ The returned middleware will take care of requests addressed to the OAuth2 serve
 ## Dependencies
 
 oauth2_server_node uses [nodetk](https://github.com/AF83/nodetk) and [rest-mongo](https://github.com/AF83/rest-mongo):
-
- - nodetk is packaged via git submodules.
- - rest-mongo is NOT packaged via git submodules, but object having the same signature/behaviour as R or Rfactory() are expected by some functions. As so, it is probably the job of the program/library using oauth2_server_node to package rest-mongo.
-
 
 ## Projects using oauth2_server_node
 
