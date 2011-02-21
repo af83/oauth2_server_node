@@ -49,7 +49,6 @@ To create an OAuth2 server using oauth2_server_node, you need to get a connector
 
 The returned middleware will take care of requests addressed to the OAuth2 server, using the objects/functions it was given during initialization. You may want to create a resource server then. The oauth2/common.js provides a check_token function which might be helpful in that. This function will check the token in request parameter and give you associated info, or deny access to client (in case of bad token).
 
-
 ## Dependencies
 
 oauth2_server_node uses [nodetk](https://github.com/AF83/nodetk) for testing, [rest-mongo](https://github.com/AF83/rest-mongo), [node-serializer](https://github.com/AF83/node-serializer) and [connect](https://github.com/senchalabs/connect).
@@ -58,20 +57,6 @@ oauth2_server_node uses [nodetk](https://github.com/AF83/nodetk) for testing, [r
 
 A [wiki page](https://github.com/AF83/oauth2_server_node/wiki) lists the projects using oauth2_server_node. Don't hesitate to edit it.
 
-
 ## License
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see [http://www.fsf.org/licensing/licenses/agpl-3.0.html](http://www.fsf.org/licensing/licenses/agpl-3.0.html).
-
-
+BSD.
