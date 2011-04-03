@@ -7,11 +7,11 @@ var assert = require('nodetk/testing/custom_assert')
 
 
 // To reinit some faked / mocked stuff in the end:
-original_RFactory = server.RFactory;
+original_Model = server.Model;
 original_authentication = server.authentication;
 original_oauth_error = server.oauth_error;
 var reinit = function(callback) {
-  server.RFactory = original_RFactory;
+  server.Model = original_Model;
   server.authentication = original_authentication;
   server.oauth_error = original_oauth_error;
   callback();
@@ -57,9 +57,7 @@ exports.tests = [
 }],
 
 ['Unsupported response_type (token and code_and_token)', 6, function() {
-  server.RFactory = function(){ // To be sure the server stop after replying
-    assert.ok(false, 'Must not be called');
-  }
+  server.Model = {}
   var params = {client_id: 1, redirect_uri: 1};
   var req = {};
   ['token', 'code_and_token'].forEach(function(type) {
@@ -70,11 +68,11 @@ exports.tests = [
 }],
 
 ['No client retrieved from DB', 3, function() {
-  server.RFactory = function() {return {
-    Client: {get: function(query, callback) {
-      callback(null);
+  server.Model = {
+    Client: {getById: function(id, callback) {
+      callback(null, null);
     }}
-  }};
+  };
   var params = {client_id: 1, response_type: 'code', redirect_uri: 1};
   var res = "res obj", req = {};
   expect_oauth_error(res, 'eua', 'invalid_client');
@@ -82,11 +80,11 @@ exports.tests = [
 }],
 
 ['Mismatching redirect_uri', 3, function() {
-  server.RFactory = function() {return {
-    Client: {get: function(query, callback) {
-      callback({redirect_uri: 'other_uri'});
+  server.Model = {
+    Client: {getById: function(id, callback) {
+      callback(null, {redirect_uri: 'other_uri'});
     }}
-  }};
+  };
   var params = {client_id: 1, response_type: 'code', redirect_uri: 'some_uri'};
   var res = "res obj", req = {};
   expect_oauth_error(res, 'eua', 'redirect_uri_mismatch');
@@ -94,11 +92,11 @@ exports.tests = [
 }],
 
 ['Error while retrieving client from DB', 3, function() {
-  server.RFactory = function() {return {
-    Client: {get: function(query, callback, fallback) {
-      fallback('error');
+  server.Model = {
+    Client: {getById: function(id, callback) {
+      callback('error');
     }}
-  }};
+  };
   var params = {client_id: 1, response_type: 'code', redirect_uri: 1};
   var req = {};
   var res = tools.get_expected_res(500);
@@ -106,32 +104,32 @@ exports.tests = [
 }],
 
 ['Client without redirect_uri but with redirect_uri param: OK', 3, function() {
-  server.RFactory = function() {return {
-    Client: {get: function(query, callback) {
-      callback({id: 'cid', name: 'cname', redirect_uri: ''});
+  server.Model = {
+    Client: {getById: function(id, callback) {
+      callback(null, {id: 'cid', name: 'cname', redirect_uri: ''});
     }}
-  }};
+  };
   var params = {client_id: 'cid', response_type: 'code', redirect_uri: 'some_uri', state: 'somestate'};
   assert_authorize_ok(params);
 }],
 
 ['Client with redirect_uri but without redirect_uri param: OK', 3, function() {
-  server.RFactory = function() {return {
-    Client: {get: function(query, callback) {
-      callback({redirect_uri: 'some_uri', name: 'cname', id: 'cid'});
+  server.Model = {
+    Client: {getById: function(id, callback) {
+      callback(null, {redirect_uri: 'some_uri', name: 'cname', id: 'cid'});
     }}
-  }};
+  };
   var params = {client_id: 'cid', response_type: 'code',
                 state: 'somestate'};
   assert_authorize_ok(params);
 }],
 
 ['Client with redirect_uri and redirect_uri param: OK', 3, function() {
-  server.RFactory = function() {return {
-    Client: {get: function(query, callback) {
-      callback({redirect_uri: 'some_uri', name: 'cname', id: 'cid'});
+  server.Model = {
+    Client: {getById: function(id, callback) {
+      callback(null, {redirect_uri: 'some_uri', name: 'cname', id: 'cid'});
     }}
-  }};
+  };
   var params = {client_id: 'cid', response_type: 'code',
                 redirect_uri: 'some_uri', state: 'somestate'};
   assert_authorize_ok(params);

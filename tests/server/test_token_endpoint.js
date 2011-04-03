@@ -8,11 +8,11 @@ var assert = require('nodetk/testing/custom_assert')
 
 // To reinit faked/mocked stuff in the end:
 var initial_oauth_error = server.oauth_error;
-var initial_RFactory = server.RFactory;
+var initial_Model = server.Model;
 var initial_valid_grant = server.valid_grant;
 exports.module_close = function(callback) {
   server.oauth_error = initial_oauth_error;
-  server.RFactory = initial_RFactory;
+  server.Model = initial_Model;
   server.valid_grant = initial_valid_grant;
   callback();
 };
@@ -35,7 +35,7 @@ exports.tests = [
 }],
 
 ['Missing parameter', 12, function() {
-  server.RFactory = function(){return {}};
+  server.Model = {};
   var res = 'resobj';
   var params = {grant_type: 1, client_id: 1, code: 1, redirect_uri: 1};
   Object.keys(params).forEach(function(missing) {
@@ -48,7 +48,7 @@ exports.tests = [
 }],
 
 ['Unsupported grant_type', 12, function() {
-  server.RFactory = function(){return {}};
+  server.Model = {};
   var res = 'resobj';
   var params = {client_id: 1, code: 1, redirect_uri: 1};
   [ "password"
@@ -63,7 +63,7 @@ exports.tests = [
 }],
 
 ['client_secret given twice', 3, function() {
-  server.RFactory = function(){return {}};
+  server.Model = {};
   var res = 'resobj';
   var params = {
     client_id: 1, code: 1, redirect_uri: 1,
@@ -80,10 +80,10 @@ exports.tests = [
 
 
 ['Unexisting client', 4, function() {
-  server.RFactory = function(){return {Client: {get: function(query, callback) {
-    assert.equal(query.ids, 'cid');
-    callback(null);
-  }}}};
+  server.Model = {Client: {getById: function(id, callback) {
+    assert.equal(id, 'cid');
+    callback(null, null);
+  }}};
   var res = 'resobj';
   var params = {
     client_id: 'cid', code: 1, redirect_uri: 1,
@@ -98,10 +98,10 @@ exports.tests = [
 }],
 
 ['Incorrect secret (in headers)', 4, function() {
-  server.RFactory = function(){return {Client: {get: function(query, callback) {
-    assert.equal(query.ids, 'cid');
-    callback({secret: 'someothersecret'});
-  }}}};
+  server.Model = {Client: {getById: function(id, callback) {
+    assert.equal(id, 'cid');
+      callback(null, {secret: 'someothersecret'});
+  }}};
   var res = 'resobj';
   var params = {
     client_id: 'cid', code: 1, redirect_uri: 1,
@@ -118,10 +118,10 @@ exports.tests = [
 
 
 ['Incorrect secret (in params)', 4, function() {
-  server.RFactory = function(){return {Client: {get: function(query, callback) {
-    assert.equal(query.ids, 'cid');
-    callback({secret: 'someothersecret'});
-  }}}};
+  server.Model = {Client: {getById: function(id, callback) {
+    assert.equal(id, 'cid');
+    callback(null, {secret: 'someothersecret'});
+  }}};
   var res = 'resobj';
   var params = {
     client_id: 'cid', code: 1, redirect_uri: 1,
@@ -137,9 +137,9 @@ exports.tests = [
 }],
 
 ['Invalid grant', 3, function() {
-  server.RFactory = function(){return {Client: {get: function(query, callback) {
-    callback({secret: 'somesecret', redirect_uri: 'http://client/process'});
-  }}}};
+  server.Model = {Client: {getById: function(id, callback) {
+      callback(null, {secret: 'somesecret', redirect_uri: 'http://client/process'});
+  }}};
   server.valid_grant = function(_, _, callback){callback(null)};
   var res = 'resobj';
   var params = {
@@ -156,9 +156,9 @@ exports.tests = [
 }],
 
 ['Error retrieving client', 3, function() {
-  server.RFactory = function(){return {Client: {get: function(query, _, fallback) {
-    fallback('error');
-  }}}};
+  server.Model = {Client: {getById: function(id, callback) {
+    callback('error');
+  }}};
   var params = {
     client_id: 'cid', code: 1, redirect_uri: 'http://client/process',
     grant_type: 'authorization_code',
@@ -173,10 +173,10 @@ exports.tests = [
 }],
 
 ['Error while validating grant', 3, function() {
-  server.RFactory = function(){return {Client: {get: function(query, callback) {
-    callback({secret: 'somesecret', redirect_uri: 'http://client/process'});
-  }}}};
-  server.valid_grant = function(_, _, _, fallback){fallback('error')};  
+  server.Model = {Client: {getById: function(id, callback) {
+      callback(null, {secret: 'somesecret', redirect_uri: 'http://client/process'});
+  }}};
+  server.valid_grant = function(_, _, callback){callback('error')};
   var params = {
     client_id: 'cid', code: 1, redirect_uri: 'http://client/process',
     grant_type: 'authorization_code',
@@ -191,10 +191,10 @@ exports.tests = [
 }],
 
 ['Valid grant', 3, function() {
-  server.RFactory = function(){return {Client: {get: function(query, callback) {
-    callback({secret: 'somesecret', redirect_uri: 'http://client/process'});
-  }}}};
-  server.valid_grant = function(_, _, callback){callback({'a': 'b'})};
+  server.Model = {Client: {getById: function(id, callback) {
+    callback(null, {secret: 'somesecret', redirect_uri: 'http://client/process'});
+  }}};
+    server.valid_grant = function(_, _, callback){callback(null, {'a': 'b'})};
   var params = {
     client_id: 'cid', code: 1, redirect_uri: 'http://client/process',
     grant_type: 'authorization_code',
@@ -207,7 +207,7 @@ exports.tests = [
   var res = {
     writeHead: function(status_code, headers) {
       assert.equal(status_code, 200);
-      assert.deepEqual(headers, { 
+      assert.deepEqual(headers, {
         'Content-Type': 'application/json'
       , 'Cache-Control': 'no-store'
       });
@@ -221,4 +221,3 @@ exports.tests = [
 }],
 
 ];
-

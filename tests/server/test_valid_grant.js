@@ -26,19 +26,17 @@ exports.tests = [
   });
 }],
 
-['Error requesting DB', 2, function() { 
-  var R = {Grant: {get: function(query, callback, fallback) {
-    fallback("error");
+['Error requesting DB', 2, function() {
+  var Grant = {getById: function(id, callback) {
+    callback("error");
     assert.ok(true, 'must be called');
-  }}};
-  server.valid_grant(R, {code: 'id.code'}, function(token) {
-    assert.ok(false, 'should not be called');
-  }, function() {
-    assert.ok(true, 'must be called');
+  }};
+  server.valid_grant(Grant, {code: 'id.code'}, function(err, token) {
+    assert.notEqual(err, null, 'should have an error');
   });
 }],
 
-['No grant | bad code | bad client_id | grant expired | invalid redirect_uri', 10, function() {
+['No grant | bad code | bad client_id | grant expired | invalid redirect_uri', 15, function() {
   Date.now = function(){return 60000}; // 0 + 1 minute
   var data = {code: 'id.CODE', client_id: 'cid', redirect_uri: "redirect_uri"};
   [ null // no grant
@@ -47,55 +45,48 @@ exports.tests = [
   , {client_id: 'cid', code: 'CODE', time: -1, redirect_uri: "redirect_uri"} // grant expired
   , {client_id: 'cid', code: 'CODE', time: 50000, redirect_uri: "bad_redirect_uri"}
   ].forEach(function(retrieved_token) {
-    var R = {Grant: {get: function(query, callback, fallback) {
-      callback(retrieved_token);
+    var Grant = {getById: function(id, callback) {
+      callback(null, retrieved_token);
       assert.ok(true, 'must be called');
-    }}};
-    server.valid_grant(R, data, function(token) {
+    }};
+    server.valid_grant(Grant, data, function(err, token) {
+      assert.equal(err, 'error in grant');
       assert.equal(token, null);
-    }, function() {
-      assert.ok(false, 'should not be called');
     });
   });
 }],
 
-['Error deleting grant from DB', 3, function() { 
+['Error deleting grant from DB', 3, function() {
   Date.now = function(){return 60000}; // 0 + 1 minute
   var data = {code: 'id.CODE', client_id: 'cid'};
-  var R = {Grant: {get: function(query, callback, fallback) {
-    callback({client_id: 'cid', code: 'CODE', time: 50000, 
-      delete_: function(callback, fallback) {
-        fallback('error');
+  var Grant = {getById: function(id, callback) {
+    callback(null, {client_id: 'cid', code: 'CODE', time: 50000,
+      del: function(callback) {
+        callback('error');
         assert.ok(true, 'must be called');
     }});
     assert.ok(true, 'must be called');
-  }}};
-  server.valid_grant(R, data, function(token) {
-    assert.ok(false, 'should not be called');
-  }, function() {
-    assert.ok(true, 'must be called');
+  }};
+  server.valid_grant(Grant, data, function(err, token) {
+      assert.notEqual(err, null, 'should have an error');
   });
 }],
 
-['OK', 3, function() { 
+['OK', 3, function() {
   Date.now = function(){return 60000}; // 0 + 1 minute
   var data = {code: 'id.CODE', client_id: 'cid'};
-  var R = {Grant: {get: function(query, callback, fallback) {
-    callback({client_id: 'cid', code: 'CODE', time: 50000, user_id: 'uid',
-      delete_: function(callback, fallback) {
+  var Grant = {getById: function(id, callback) {
+    callback(null, {client_id: 'cid', code: 'CODE', time: 50000, user_id: 'uid',
+      del: function(callback) {
         callback();
         assert.ok(true, 'must be called');
     }});
     assert.ok(true, 'must be called');
-  }}};
-  server.valid_grant(R, data, function(token) {
+  }};
+  server.valid_grant(Grant, data, function(err, token) {
     assert.deepEqual(token, {
       access_token: oauth2.create_access_token('uid', 'cid')
     });
-  }, function() {
-    assert.ok(false, 'should not be called');  
   });
 }],
-
 ];
-
